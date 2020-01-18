@@ -1,6 +1,7 @@
 # enron_emails
 A program that parses Enron Emails dataset. 
-Program calculates 
+
+The program calculates:
   1) how many emails were sent from each sender address to each recipient, and
   2) the average number of emails received per day per employee per day of week (monday, tuesday, etc.).
 
