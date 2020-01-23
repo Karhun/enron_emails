@@ -52,7 +52,7 @@ class Enron_emails:
         paths to count receivers.
         Used for reading email data from all users and from selected folder.
         '''
-        selected_folder = [ os.path.join(root,_dir) for root, dirs, files in os.walk(r'C:\Users\Anette\Documents\Enron_Emails_project\enron_emails\maildir') for _dir in dirs if _dir == self.FOLDER]
+        selected_folder = [ os.path.join(root,_dir) for root, dirs, files in os.walk(self.root_directory) for _dir in dirs if _dir == self.FOLDER]
         folder_paths = [os.path.join(root,file) for path in selected_folder for root,dirs,files in os.walk(path) for file in files]
         return folder_paths
 
@@ -158,7 +158,7 @@ class Enron_emails:
         csv_to_df.columns = ['employee', 'day_of_week', 'date']
         duplicates_in_data_df = csv_to_df.pivot_table(index=['employee', 'day_of_week', 'date'], aggfunc='size')
         duplicates_in_data_df = pd.DataFrame(duplicates_in_data_df)
-        duplicates_in_data_df.rename(columns={0:'counter'}, inplace=True)
+        duplicates_in_data_df.rename(columns={0:'avg_count'}, inplace=True)
         average_mails = duplicates_in_data_df.groupby(['employee', 'day_of_week']).mean()
         average_mails.to_csv(csv_path)
         return
