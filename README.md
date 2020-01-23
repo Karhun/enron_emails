@@ -30,4 +30,4 @@ The paths to be given are:
 
 Use ''- marks to give the path to the program. Also, if using windows paths, use key r infront of '', i.e. r'path/to/email/set' - as windows path is not recognized otherwise and errors accure. If using Linux or Mac no need to use the keyword r. 
 
-The program outputs two None's and finally 'Finished' when it has run the program and created the two csv-files into given location.
+The program outputs 'Finished' when it has run the program and created the two csv-files into given location.
