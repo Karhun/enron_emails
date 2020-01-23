@@ -98,19 +98,19 @@ class Enron_emails:
         # load csv data as dataframe, make columns.
         self.load_parse_and_save(csv_file_path)
         csv_as_df = pd.read_csv(csv_file_path)
-        csv_as_df.columns=['sender','receiver']
-        # remone (), specials characters from email addresses.
-        csv_as_df['receiver'] = csv_as_df['receiver'].str.replace("\(\'", '')
-        csv_as_df['receiver'] = csv_as_df['receiver'].str.replace("\',\)", '')
+        csv_as_df.columns=['sender','recipient']
+        # remove (), specials characters from email addresses.
+        csv_as_df['recipient'] = csv_as_df['recipient'].str.replace("\(\'", '')
+        csv_as_df['recipient'] = csv_as_df['recipient'].str.replace("\',\)", '')
         # remove any word before <. appears in string, and remove <.> - characters.
-        csv_as_df['receiver'] = [re.sub(r".*<.", '', stri) for stri in csv_as_df['receiver']]
-        csv_as_df['receiver'] = csv_as_df['receiver'].str.replace(">", '')
+        csv_as_df['recipient'] = [re.sub(r".*<.", '', stri) for stri in csv_as_df['recipient']]
+        csv_as_df['recipient'] = csv_as_df['recipient'].str.replace(">", '')
         # Splits the receivers into own rows.
-        splitted_receivers_df = pd.concat([pd.Series(row['sender'], row['receiver'].split(', ')) for _, row in csv_as_df.iterrows()]).reset_index()
-        splitted_receivers_df.columns =['receiver', 'sender']
-        splitted_receivers_df = splitted_receivers_df.reindex(columns=['sender', 'receiver'])
+        splitted_receivers_df = pd.concat([pd.Series(row['sender'], row['recipient'].split(', ')) for _, row in csv_as_df.iterrows()]).reset_index()
+        splitted_receivers_df.columns =['recipient', 'sender']
+        splitted_receivers_df = splitted_receivers_df.reindex(columns=['sender', 'recipient'])
         # Counts the same receivers and senders amount together. (flips the columns and forgets colum names.)
-        counted_data = splitted_receivers_df.pivot_table(index=['sender', 'receiver'], aggfunc='size')
+        counted_data = splitted_receivers_df.pivot_table(index=['sender', 'recipient'], aggfunc='size')
         # switch columns back into order and rename columns into asked format:sender,receiver,count.
         counted_data = pd.DataFrame(counted_data)
         counted_data.rename(columns={0:'count'}, inplace=True)
@@ -151,7 +151,6 @@ class Enron_emails:
         csv draft with parsed data.
         Next, reads csv file and adds column names. Counts duplicate rows together
         and then calculates the average for each sender and each week day emails.
-        
         '''
         csv_path = self.dates_parsing()
         csv_to_df = pd.read_csv(csv_path)
@@ -171,7 +170,7 @@ def main():
     the total amounts of each sender sent mail to each receiver, and then
     counts from all received (inboxes) emails of all users average per day.
     
-    When program has executed, it prints Finished. Csv-files have been created into given paths.
+    When program has executed, it prints Finished. Csv-files have been created into given path.
     '''
     enron_all_mails = Enron_emails(r'C:\Users\Anette\Documents\Enron_Emails_project\enron_emails\maildir', r'C:\Users\Anette\Documents\enron_emails')
     Enron_emails.count_similarities(enron_all_mails)
