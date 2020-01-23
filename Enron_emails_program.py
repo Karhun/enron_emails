@@ -30,11 +30,13 @@ class Enron_emails:
     'emails_sent_average_per_weekday.csv'.
     '''
     FOLDER = 'inbox'
-    def __init__(self, root_directory):
+    def __init__(self, root_directory, csv_save_path):
         '''
-        Initialize with root directory of where the enron emails are located.
+        Initialize with root directory of where the enron emails are located,
+        and with path where to save the csv-files.
         '''
         self.root_directory = root_directory
+        self.csv_save_path = csv_save_path
     
     def users_directories_files(self):
         '''
@@ -50,14 +52,14 @@ class Enron_emails:
         paths to count receivers.
         Used for reading email data from all users and from selected folder.
         '''
-        inboxes = [ os.path.join(root,_dir) for root, dirs, files in os.walk(r'C:\Users\Anette\Documents\Enron_Emails_project\enron_emails\maildir') for _dir in dirs if _dir == self.FOLDER]
-        inbox_paths = [os.path.join(root,file) for path in inboxes for root,dirs,files in os.walk(path) for file in files]
-        return inbox_paths
+        selected_folder = [ os.path.join(root,_dir) for root, dirs, files in os.walk(r'C:\Users\Anette\Documents\Enron_Emails_project\enron_emails\maildir') for _dir in dirs if _dir == self.FOLDER]
+        folder_paths = [os.path.join(root,file) for path in selected_folder for root,dirs,files in os.walk(path) for file in files]
+        return folder_paths
 
     def load_parse_and_save(self, file_path):
         '''
         Loads all email data and opens them in binary. Function parses From, To, Cc, and Bcc headers
-        with BytesHeaderParser and saves parsed email addresses first into list of tuples and the 
+        with BytesHeaderParser and saves parsed email addresses first into list of tuples and then 
         into a csv-file if they contain values. This new csv-file has two columns, the receiver 
         and the sender email addresses. 
         '''
@@ -65,7 +67,9 @@ class Enron_emails:
         for index, mail in enumerate(self.users_directories_files()):
             with open(mail, 'rb') as fp:             
                 email = BytesHeaderParser().parse(fp)
+                # parse with email headers to get only sender and receivers.
                 sender = format(email['from'])
+                # Makes a list of tuples, without 'None' strings.
                 if format(email['to']) != 'None':
                     receiver = format(email['to'])
                     sender_receiver_list.append((sender, receiver))
@@ -75,11 +79,12 @@ class Enron_emails:
                 if format(email['bcc']) != 'None':
                     bcc_receiver = format(email['bcc'])
                     sender_receiver_list.append((sender, bcc_receiver))
+        # write tuple into csv at once to save space.
         csv_writer = csv.writer(open(file_path, 'w', newline='', encoding="utf-8"))
         csv_writer.writerows(sender_receiver_list)
         return
 
-    def count_similarities(self, path_to_csv):
+    def count_similarities(self):
         '''
         This function calls load_parse_and_save() function to parse data.
         Then it opens the created csv-file with pandas DataFrame and
@@ -89,7 +94,8 @@ class Enron_emails:
         and receivers totals from all emails and saves this information into 
         csv-file's new count-column.
         '''
-        csv_file_path = os.path.join(path_to_csv, 'emails_sent_totals.csv')
+        csv_file_path = os.path.join(self.csv_save_path , 'emails_sent_totals.csv')
+        # load csv data as dataframe, make columns.
         self.load_parse_and_save(csv_file_path)
         csv_as_df = pd.read_csv(csv_file_path)
         csv_as_df.columns=['sender','receiver']
@@ -111,7 +117,7 @@ class Enron_emails:
         counted_data.to_csv(csv_file_path)
         return
         
-    def dates_parsing(self, file_path):
+    def dates_parsing(self):
         '''
         Parses a week day from all emails headers and gets the date of emails
         for comparison purposes. Changes weekdays to numbers, from 0-6, 
@@ -119,25 +125,26 @@ class Enron_emails:
         '''
         user_date_list =[]  
         for index, mail in enumerate(self.users_inbox_files()):
-            with open(mail, 'rb') as fp:    
+            with open(mail, 'rb') as fp:   
+                # Parse only header information from emails.
                 email = BytesHeaderParser().parse(fp)
-                folder_names = Path(mail).parts
-           #     sender = format(email['from'])    
-           #     for folder_name in folder_names:
-            #        if folder_name not in sender: 
+                # Select date from headers of emails and split only needed information: date and day for comparison.
                 parse_dates = format(email['Date'])
                 date= parsedate_to_datetime(parse_dates).date()
                 weekdays = parse_dates.split(',' )[0]
+                # Change weekdays to num [0,6]
                 days_as_num = time.strptime(weekdays, '%a').tm_wday
+                folder_names = Path(mail).parts
                 usernames = os.listdir(self.root_directory)
+                # make a list of emails username, day of week and date for comparison.
                 user_day_list = [(username,days_as_num, date) for folder_name in folder_names for username in usernames if username in folder_name]
                 user_date_list.append(list(itertools.chain(*user_day_list)))
-        csv_file_path = os.path.join(file_path, 'emails_sent_average_per_weekday.csv')
-        csv_writer = csv.writer(open(csv_file_path, 'w', newline='', encoding="utf-8"))
+        csv_file_path = os.path.join(self.csv_save_path , 'emails_sent_average_per_weekday.csv')
+        csv_writer = csv.writer(open(csv_file_path, 'w', newline=''))
         csv_writer.writerows(user_date_list)
         return csv_file_path
     
-    def calculate_emails_average_per_day(self, filepath):
+    def calculate_emails_average_per_day(self):
         '''
         Calculate the average amount of emails per day per user.
         First it calls the dates_parsing() to parse all email data and create
@@ -146,7 +153,7 @@ class Enron_emails:
         and then calculates the average for each sender and each week day emails.
         
         '''
-        csv_path = self.dates_parsing(filepath)
+        csv_path = self.dates_parsing()
         csv_to_df = pd.read_csv(csv_path)
         csv_to_df.columns = ['employee', 'day_of_week', 'date']
         duplicates_in_data_df = csv_to_df.pivot_table(index=['employee', 'day_of_week', 'date'], aggfunc='size')
@@ -162,13 +169,13 @@ def main():
     The main function to call the program. The program goes through all emails
     in Enron Email -dataset and first counts into a csv (emails_sent_totals.csv) 
     the total amounts of each sender sent mail to each receiver, and then
-    counts from all emails all users average per day.
+    counts from all received (inboxes) emails of all users average per day.
     
     When program has executed, it prints Finished. Csv-files have been created into given paths.
     '''
-    enron_all_mails = Enron_emails(r'C:\Users\Anette\Documents\Enron_Emails_project\enron_emails\maildir')
-    print(Enron_emails.count_similarities(enron_all_mails, r'C:\Users\Anette\Documents\enron_emails'))
-    print(Enron_emails.calculate_emails_average_per_day(enron_all_mails, r'C:\Users\Anette\Documents\enron_emails'))
+    enron_all_mails = Enron_emails(r'C:\Users\Anette\Documents\Enron_Emails_project\enron_emails\maildir', r'C:\Users\Anette\Documents\enron_emails')
+    print(Enron_emails.count_similarities(enron_all_mails))
+    print(Enron_emails.calculate_emails_average_per_day(enron_all_mails))
     print('Finished')
     
 if __name__ == "__main__":
