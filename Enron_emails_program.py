@@ -174,8 +174,8 @@ def main():
     When program has executed, it prints Finished. Csv-files have been created into given paths.
     '''
     enron_all_mails = Enron_emails(r'C:\Users\Anette\Documents\Enron_Emails_project\enron_emails\maildir', r'C:\Users\Anette\Documents\enron_emails')
-    print(Enron_emails.count_similarities(enron_all_mails))
-    print(Enron_emails.calculate_emails_average_per_day(enron_all_mails))
+    Enron_emails.count_similarities(enron_all_mails)
+    Enron_emails.calculate_emails_average_per_day(enron_all_mails)
     print('Finished')
     
 if __name__ == "__main__":
